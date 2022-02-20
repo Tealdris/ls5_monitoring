@@ -1,0 +1,14 @@
+cat << EOF | sudo tee /etc/prometheus.d/prometheus.yml
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+  crape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+    - targets: ['18.221.29.118:9090']
+  - job_name: 'node'
+    static_configs:
+    - targets:
+      - 18.221.29.118:9100
+EOF

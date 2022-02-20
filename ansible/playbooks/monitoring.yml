@@ -1,0 +1,113 @@
+---
+
+- name: install apache and upload web page
+  hosts: server
+  become: yes
+
+
+  tasks:
+  - name: Prometeus enviroment
+    shell: |
+      docker pull quay.io/prometheus/prometheus
+      sudo docker stop $(sudo docker ps -aq)
+      sudo docker rm $(sudo docker ps -aq)
+      mkdir /etc/prometheus.d
+      cat << EOF | sudo tee /etc/prometheus.d/prometheus.yml
+      global:
+        scrape_interval:     15s
+        evaluation_interval: 15s
+      
+      scrape_configs:
+        - job_name: 'prometheus'
+          static_configs:
+          - targets: ['18.221.29.118:9090']
+        - job_name: 'node'
+          static_configs:
+          - targets:
+            - 18.221.29.118:9100
+      EOF
+
+  - name: Prometeus docker
+    shell: |
+      sudo docker run \
+      --detach \
+      --interactive \
+      --tty \
+      --network host \
+      --name prometheus \
+      --restart always \
+      --volume prometheus:/prometheus \
+      --volume /etc/prometheus.d:/etc/prometheus.d:Z \
+      quay.io/prometheus/prometheus \
+      --config.file=/etc/prometheus.d/prometheus.yml \
+      --web.external-url=http://$(hostname -f):9090 \
+      --web.enable-lifecycle \
+      --web.enable-admin-api \
+      --web.listen-address=:9090
+
+  - name: Prometeus node_exporter
+    shell: |
+      useradd --no-create-home --shell /bin/false node_exporter
+      cd ~
+      curl -LO https://github.com/prometheus/node_exporter/releases/download/v0.15.1/node_exporter-0.15.1.linux-amd64.tar.gz
+      tar xvf node_exporter-0.15.1.linux-amd64.tar.gz
+      cp node_exporter-0.15.1.linux-amd64/node_exporter /usr/local/bin
+      chown node_exporter:node_exporter /usr/local/bin/node_exporter
+      rm -rf node_exporter-0.15.1.linux-amd64.tar.gz node_exporter-0.15.1.linux-amd64
+      cat <<EOF | sudo tee /etc/systemd/system/node_exporter.service
+      [Unit]
+      Description=Node Exporter
+      Wants=network-online.target
+      After=network-online.target
+
+      [Service]
+      User=node_exporter
+      Group=node_exporter
+      Type=simple
+      ExecStart=/usr/local/bin/node_exporter
+
+      [Install]
+      WantedBy=multi-user.target
+      EOF
+
+      systemctl daemon-reload
+      systemctl start node_exporter
+      systemctl enable node_exporter
+
+  - name: install database
+    shell: |
+      apt install influxdb -y
+      apt install influxdb-client -y
+
+      
+  - name: database config
+    shell: |
+      sudo sed-i ‘s/^[[collectd]]/#[[collectd]]/’ /etc/influxdb/influxdb.conf
+      cat << EOF | sudo tee -a /etc/influxdb/influxdb.conf
+      [[collectd]]
+      enabled = true
+      bind-address = “:25826”
+      database = “collectd”
+      retention-policy = “”
+      typesdb = “/usr/local/share/collectd/types.db”
+      security-level = “none”
+      EOF
+
+      mkdir /usr/local/share/collectd/
+      curl https://raw.githubusercontent.com/collectd/collectd/master/src/types.db
+      echo "stations value:GAUGE:0:256" >> types.db
+      mv types.db /usr/local/share/collectd/types.db
+      ss -ltunp |egrep "8086|25826"
+      influx -execute 'CREATE DATABASE collectd'
+
+  - name: graphana
+    shell: |
+      apt-get install -y apt-transport-https
+      apt-get install -y software-properties-common wget
+      wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -
+      echo "deb https://packages.grafana.com/enterprise/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+      echo "deb https://packages.grafana.com/enterprise/deb beta main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+      apt-get update
+      apt-get install grafana-enterprise -y
+      systemctl enable grafana-server
+      systemctl start grafana-server

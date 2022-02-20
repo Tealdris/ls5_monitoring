@@ -1,0 +1,42 @@
+{
+    "variables": {
+      "aws_access_key": "AKIAR57Z2CUDCZYNJYGV",
+      "aws_secret_key": "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"
+    },
+    "builders": [
+      {
+        "type": "amazon-ebs",
+        "access_key": "{{user `aws_access_key`}}",
+        "secret_key": "{{user `aws_secret_key`}}",
+        "region": "us-east-2",
+        "source_ami_filter": {
+          "filters": {
+            "virtualization-type": "hvm",
+            "name": "ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*",
+            "root-device-type": "ebs"
+          },
+          "owners": ["099720109477"],
+          "most_recent": true
+        },
+        "instance_type": "t2.micro",
+        "ssh_username": "ubuntu",
+        "ami_name": "docker {{timestamp}}"
+      }
+    ],
+    "provisioners": [{
+      "type": "shell",
+      "inline": [
+          "sleep 30",
+          "sudo apt-get update",
+          "sudo apt install -y  apt-transport-https ca-certificates curl software-properties-common",
+          "wget https://download.docker.com/linux/ubuntu/gpg -O gpg",
+          "sudo apt-key add gpg",
+          "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable\"",
+          "rm gpg",
+          "sudo apt update",
+          "sudo apt install -y docker-ce",
+          "sudo curl -L \"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose",
+          "sudo chmod +x /usr/local/bin/docker-compose"
+      ]
+  }]
+  }
