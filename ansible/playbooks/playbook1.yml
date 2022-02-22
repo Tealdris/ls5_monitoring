@@ -14,11 +14,4 @@
       remote_user: ubuntu
       ping:
     when: ansible_os_family == "Debian"
-
-  - block: # ReedHat block
-    - name: Ping rh
-      remote_user: ec2-user
-      ping:
-    when: ansible_os_family == "RedHat"
-
 ...

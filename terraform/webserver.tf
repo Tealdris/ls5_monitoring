@@ -45,7 +45,7 @@ resource "aws_instance" "server" {
 #    command = "echo ${aws_instance.front-ub.public_ip} >> ip.txt"
 #    }
 #}
-
+/*
 resource "aws_instance" "monitoring" {
     ami = "ami-049c42843f058aebb"
     instance_type = "t2.micro"
@@ -55,7 +55,7 @@ resource "aws_instance" "monitoring" {
     command = "echo ${aws_instance.monitoring.public_ip} >> ip.txt"
     }
 }
-
+*/
 resource "aws_security_group" "webserver" {
   name        = "webserver-security-group"
   description = "Allow all inbound traffic"

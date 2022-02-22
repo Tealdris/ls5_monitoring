@@ -9,7 +9,7 @@
     debug: var=ansible_os_family
 
   - block: # UBUNTU block
-    - name: UB Git clone
+    - name: Git clone
       git:
         repo: https://github.com/Tealdris/webnotes.git
         dest: /home/ubuntu/webnotes/
@@ -17,7 +17,18 @@
         update: yes
 
     - name: UB deploy Docker Compose stack
-      command: docker stack deploy --compose-file /home/ubuntu/webnotes/docker-compose.yml ls3
+      docker_compose:
+        project_src: /home/ubuntu/webnotes/
+        state: present
+        files:
+        - docker-compose.yml
+
+    - name: UB Restart services
+      docker_compose:
+        project_src: /home/ubuntu/webnotes/
+        build: yes
+        restarted: yes
+      register: output
 
     when: ansible_os_family == "Debian"
 

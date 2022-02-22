@@ -1,0 +1,35 @@
+groups:
+      - name: Hardware alerts
+        rules:
+        - alert: Node down
+          expr: up{job="node_exporter"} == 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            title: "Node {{ $labels.instance }} is down"
+            description: "Failed to scrape {{ $labels.job }} on {{ $labels.instance }} for more than 3 minutes. Node seems down."
+        - alert: HostOutOfMemory
+          expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 95
+          for: 2m
+          labels:
+            severity: warning
+          annotations:
+            summary: Host out of memory (instance {{ $labels.instance }})
+            description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        - alert: Redis instance is down
+          expr: redis_up == 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            title: Redis instance is down
+            description: Redis is down at {{ $labels.instance }} for 1 minute.
+
+        - alert: Redis cluster is down
+          expr: min(redis_cluster_state) == 0
+          labels:
+            severity: page
+          annotations:
+            title: Redis cluster is down
+            description: Redis cluster is down.

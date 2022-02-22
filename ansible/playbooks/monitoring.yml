@@ -16,16 +16,29 @@
       global:
         scrape_interval:     15s
         evaluation_interval: 15s
-      
+      rule_files:
+        - rules.yml
       scrape_configs:
         - job_name: 'prometheus'
           static_configs:
-          - targets: ['18.221.29.118:9090']
+          - targets: [':9090']
         - job_name: 'node'
           static_configs:
           - targets:
-            - 18.221.29.118:9100
+            - :9100
       EOF
+
+  - name: Prometeus enviroment 2
+    ansible.builtin.copy:
+      src: /home/st10/Documents/git/ls3_infr_as_code/ansible/playbooks/templates/rules.yml
+      dest: /etc/prometheus.d/rules.yml
+
+  - name: alert manager
+    shell: |
+      cd /opt/
+      wget https://github.com/prometheus/alertmanager/releases/download/v0.11.0/alertmanager-0.11.0.linux-amd64.tar.gz
+      tar -xvzf alertmanager-0.11.0.linux-amd64.tar.gz
+      mv alertmanager-0.11.0.linux-amd64/alertmanager /usr/local/bin/
 
   - name: Prometeus docker
     shell: |
@@ -44,6 +57,9 @@
       --web.enable-lifecycle \
       --web.enable-admin-api \
       --web.listen-address=:9090
+
+      sudo docker cp /etc/prometheus.d/rules.yml $(sudo docker ps -aq):/etc/prometheus/rules.yml
+
 
   - name: Prometeus node_exporter
     shell: |
@@ -93,7 +109,7 @@
       security-level = “none”
       EOF
 
-      mkdir /usr/local/share/collectd/
+      mkdir /usr/local/share/collectd/ || true
       curl https://raw.githubusercontent.com/collectd/collectd/master/src/types.db
       echo "stations value:GAUGE:0:256" >> types.db
       mv types.db /usr/local/share/collectd/types.db

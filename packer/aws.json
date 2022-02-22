@@ -1,7 +1,7 @@
 {
     "variables": {
-      "aws_access_key": "AKIAR57Z2CUDCZYNJYGV",
-      "aws_secret_key": "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"
+      "aws_access_key": "",
+      "aws_secret_key": ""
     },
     "builders": [
       {
@@ -27,16 +27,17 @@
       "type": "shell",
       "inline": [
           "sleep 30",
-          "sudo apt-get update",
-          "sudo apt install -y  apt-transport-https ca-certificates curl software-properties-common",
-          "wget https://download.docker.com/linux/ubuntu/gpg -O gpg",
-          "sudo apt-key add gpg",
-          "sudo add-apt-repository \"deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable\"",
-          "rm gpg",
           "sudo apt update",
-          "sudo apt install -y docker-ce",
-          "sudo curl -L \"https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)\" -o /usr/local/bin/docker-compose",
-          "sudo chmod +x /usr/local/bin/docker-compose"
+          "sudo apt install apt-transport-https ca-certificates curl software-properties-common -y",
+          "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
+          "sudo add-apt-repository d'eb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable'",
+          "sudo apt-get update",
+          "apt-cache policy docker-ce",
+          "sudo apt install docker-ce -y ",
+          "sudo usermod -aG docker ${USER}",
+          "sudo usermod -aG docker $USER",
+          "sudo curl -L 'https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)' -o /usr/local/bin/docker-compose",
+          "sudo chmod +x /usr/local/bin/docker-compose",
       ]
   }]
   }
